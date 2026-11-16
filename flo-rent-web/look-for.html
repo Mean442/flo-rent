@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LOOK FOR · ตามหาของที่อยากเช่า · FLO-RENT</title>
+<meta name="description" content="ประกาศตามหาสินค้าที่ต้องการเช่า ให้คนที่มีของติดต่อกลับ">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="index.html">FLO<span>-</span>RENT</a>
+      <nav class="nav">
+        <a href="browse.html">สินค้าทั้งหมด</a>
+        <a href="look-for.html" class="is-active">LOOK FOR</a>
+        <a href="index.html#how">วิธีใช้งาน</a>
+      </nav>
+      <a class="btn btn-maroon btn-sm" href="post.html">ลงประกาศให้เช่า</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-head">
+      <h1>Look for</h1>
+      <p>หาของไม่เจอ? ประกาศว่ากำลังตามหาอะไร งบเท่าไร แล้วให้คนที่มีของปล่อยเช่าติดต่อกลับ</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start" class="lookfor-layout">
+      <form class="form-card" id="request-form">
+        <div class="form-grid">
+          <label class="field span-2"><span>ต้องการเช่าอะไร</span>
+            <input type="text" id="request-want" required placeholder="เช่น เดรสราตรีสีแดง ไซซ์ S">
+          </label>
+          <label class="field"><span>หมวดหมู่</span>
+            <select id="request-cat"></select>
+          </label>
+          <label class="field"><span>งบต่อวัน (บาท)</span>
+            <input type="number" id="request-budget" min="0" step="50" placeholder="500">
+          </label>
+          <label class="field"><span>ช่วงวันที่ต้องการ</span>
+            <input type="text" id="request-when" placeholder="เช่น 20–21 ธ.ค.">
+          </label>
+          <label class="field"><span>ชื่อผู้ประกาศ</span>
+            <input type="text" id="request-name" placeholder="เช่น น้องฟ้า">
+          </label>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-maroon" type="submit">ประกาศตามหา</button>
+        </div>
+        <p class="notice" id="request-ok" hidden>ประกาศของคุณขึ้นในรายการแล้ว</p>
+      </form>
+
+      <section>
+        <div class="section-head" style="margin-bottom:16px;padding-bottom:12px">
+          <h2 style="font-size:22px">กำลังตามหา</h2>
+        </div>
+        <div class="request-list" id="request-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom" style="margin-top:0;border-top:0;padding-top:0">
+        <span>© 2026 FLO-RENT · HMMM! &amp; CO.</span>
+        <span>ผู้ใช้งานต้องมีอายุ 15 ปีขึ้นไป</span>
+      </div>
+    </div>
+  </footer>
+</div>
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

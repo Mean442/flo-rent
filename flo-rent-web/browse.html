@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ค้นหาสินค้า · FLO-RENT</title>
+<meta name="description" content="ค้นหาและกรองสินค้าให้เช่าตามหมวดหมู่ ช่วงราคา และคะแนนผู้ให้เช่า">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="index.html">FLO<span>-</span>RENT</a>
+      <nav class="nav">
+        <a href="browse.html" class="is-active">สินค้าทั้งหมด</a>
+        <a href="look-for.html">LOOK FOR</a>
+        <a href="index.html#how">วิธีใช้งาน</a>
+      </nav>
+      <a class="btn btn-maroon btn-sm" href="post.html">ลงประกาศให้เช่า</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-head">
+      <h1>หาของที่ต้องการ</h1>
+      <p>พิมพ์คำสำคัญ เลือกหมวดหมู่ และกำหนดช่วงราคาต่อวันที่ต้องการ ระบบจะแสดงสินค้าที่ตรงกับเงื่อนไขทั้งหมด</p>
+    </div>
+
+    <form class="filter-panel" id="filter-form">
+      <div class="search-bar" style="background:#222b40;border:1px solid var(--line)">
+        <input type="search" id="filter-q" placeholder="I..." aria-label="คำค้นหา" style="color:var(--cream)">
+        <button type="submit" aria-label="ค้นหา">🔍</button>
+      </div>
+
+      <div class="filter-cats" id="filter-cats"></div>
+
+      <div class="filter-row">
+        <label class="field" style="width:130px"><span>ราคาต่ำสุด/วัน</span>
+          <input type="number" id="filter-min" min="0" step="50" inputmode="numeric">
+        </label>
+        <label class="field" style="width:130px"><span>ราคาสูงสุด/วัน</span>
+          <input type="number" id="filter-max" min="0" step="50" inputmode="numeric">
+        </label>
+        <button class="btn btn-cream btn-sm" type="submit">ใช้ตัวกรอง</button>
+        <label class="field" style="margin-left:auto;width:190px"><span>เรียงตาม</span>
+          <select id="filter-sort">
+            <option value="recommended">แนะนำ</option>
+            <option value="price-asc">ราคาต่ำ → สูง</option>
+            <option value="price-desc">ราคาสูง → ต่ำ</option>
+            <option value="rating">คะแนนสูงสุด</option>
+          </select>
+        </label>
+      </div>
+    </form>
+
+    <div class="result-bar">
+      <span id="result-count">พบ 0 รายการ</span>
+      <span class="muted" style="font-size:12px">ทุกประกาศผ่านการยืนยันตัวตน · ผู้เช่าต้องอายุ 15 ปีขึ้นไป</span>
+    </div>
+
+    <div class="grid-4" id="browse-grid"></div>
+
+    <div class="empty" id="empty-state" hidden>
+      <h2 class="display display-sm">ไม่พบสินค้าที่ตรงกัน</h2>
+      <p class="muted">ลองลดเงื่อนไขราคา เปลี่ยนหมวดหมู่ หรือประกาศตามหาในหน้า LOOK FOR</p>
+      <a class="btn btn-cream" href="look-for.html">ประกาศตามหาของ</a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <span class="footer-logo">FLO<span>-</span>RENT</span>
+          <p class="footer-note">แพลตฟอร์มเช่า / ยืมสินค้าโดย HMMM! &amp; CO.<br>ผู้ใช้งานต้องมีอายุ 15 ปีขึ้นไป</p>
+        </div>
+        <div>
+          <h4>สินค้า</h4>
+          <ul>
+            <li><a href="browse.html?cat=crew">ของใช้คอนออกกอง</a></li>
+            <li><a href="browse.html?cat=fashion">แฟชั่น</a></li>
+            <li><a href="browse.html?cat=sport">อุปกรณ์กีฬา</a></li>
+            <li><a href="browse.html?cat=party">งานบันเทิง</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>บริการ</h4>
+          <ul>
+            <li><a href="post.html">ลงประกาศให้เช่า</a></li>
+            <li><a href="look-for.html">LOOK FOR</a></li>
+            <li><a href="index.html#how">วิธีใช้งาน</a></li>
+            <li><a href="index.html#value">Brand value</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>ติดต่อ</h4>
+          <ul>
+            <li>hello@flo-rent.co</li>
+            <li>LINE: @florent</li>
+            <li>IG: @flo.rent</li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 FLO-RENT · HMMM! &amp; CO.</span>
+        <span>Sharing economy · เช่า-ยืม-แบ่งปัน</span>
+      </div>
+    </div>
+  </footer>
+</div>
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เข้าสู่ระบบ · FLO-RENT</title>
+<meta name="description" content="เข้าสู่ระบบหรือสมัครสมาชิก FLO-RENT เพื่อจองสินค้า ลงประกาศ และดูประวัติการจอง">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo" href="index.html">FLO<span>-</span>RENT</a>
+      <nav class="nav">
+        <a href="browse.html">สินค้าทั้งหมด</a>
+        <a href="look-for.html">LOOK FOR</a>
+        <a href="index.html#how">วิธีใช้งาน</a>
+      </nav>
+      <a class="btn btn-maroon btn-sm" href="post.html">ลงประกาศให้เช่า</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-head">
+      <h1>บัญชีผู้ใช้</h1>
+      <p>เข้าสู่ระบบเพื่อยืนยันการจอง ลงประกาศ และเก็บประวัติการเช่าไว้ดูย้อนหลัง · ผู้ใช้งานต้องมีอายุ 15 ปีขึ้นไป</p>
+    </div>
+
+    <div class="auth-wrap">
+      <div class="auth-card">
+        <div class="auth-tabs" id="auth-tabs">
+          <button class="auth-tab is-active" type="button" data-mode="login">เข้าสู่ระบบ</button>
+          <button class="auth-tab" type="button" data-mode="register">สมัครสมาชิก</button>
+        </div>
+
+        <form id="login-form" class="form-grid" style="gap:14px">
+          <label class="field span-2"><span>อีเมล</span>
+            <input type="email" id="login-email" required placeholder="you@email.com" autocomplete="username">
+          </label>
+          <label class="field span-2"><span>รหัสผ่าน</span>
+            <input type="password" id="login-pass" required minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร" autocomplete="current-password">
+          </label>
+          <p class="form-msg" id="login-msg" role="status" style="grid-column:1/-1"></p>
+          <button class="btn btn-maroon btn-block" type="submit" style="grid-column:1/-1">เข้าสู่ระบบ</button>
+          <p class="fine-print" style="grid-column:1/-1">บัญชีทดลอง: demo@flo-rent.co / demo1234</p>
+        </form>
+
+        <form id="register-form" class="form-grid" style="gap:14px" hidden>
+          <label class="field span-2"><span>ชื่อที่ใช้แสดง</span>
+            <input type="text" id="reg-name" required minlength="2" placeholder="เช่น น้องฟ้า" autocomplete="name">
+          </label>
+          <label class="field span-2"><span>อีเมล</span>
+            <input type="email" id="reg-email" required placeholder="you@email.com" autocomplete="email">
+          </label>
+          <label class="field"><span>รหัสผ่าน</span>
+            <input type="password" id="reg-pass" required minlength="6" placeholder="6 ตัวอักษรขึ้นไป" autocomplete="new-password">
+          </label>
+          <label class="field"><span>ยืนยันรหัสผ่าน</span>
+            <input type="password" id="reg-pass2" required minlength="6" autocomplete="new-password">
+          </label>
+          <label class="field"><span>อายุ</span>
+            <input type="number" id="reg-age" required min="15" max="99" placeholder="15+">
+          </label>
+          <label class="field"><span>เบอร์โทร (ไม่บังคับ)</span>
+            <input type="text" id="reg-phone" placeholder="08x-xxx-xxxx" autocomplete="tel">
+          </label>
+          <p class="form-msg" id="reg-msg" role="status" style="grid-column:1/-1"></p>
+          <button class="btn btn-maroon btn-block" type="submit" style="grid-column:1/-1">สมัครสมาชิก</button>
+        </form>
+      </div>
+
+      <aside class="value-card auth-aside">
+        <h3>ทำไมต้องมีบัญชี FLO-RENT</h3>
+        <ul>
+          <li>ยืนยันการจองและเก็บประวัติการเช่าไว้ดูย้อนหลัง</li>
+          <li>มีคะแนนผู้เช่า–ผู้ให้เช่า ช่วยสร้างความน่าเชื่อถือ</li>
+          <li>จัดการประกาศของตัวเองได้ในหน้าเดียว</li>
+          <li>ประกาศ LOOK FOR ให้คนที่มีของติดต่อกลับ</li>
+        </ul>
+        <button class="btn btn-cream btn-sm" type="button" id="demo-fill">ใช้บัญชีทดลอง</button>
+        <p class="fine-print" style="margin-top:14px">ข้อมูลบัญชีเก็บไว้ในเบราว์เซอร์นี้เท่านั้น (เดโม ไม่มีเซิร์ฟเวอร์) และรหัสผ่านถูกเก็บเป็น hash ไม่ได้เก็บเป็นข้อความตรง ๆ</p>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-bottom" style="margin-top:0;border-top:0;padding-top:0">
+        <span>© 2026 FLO-RENT · HMMM! &amp; CO.</span>
+        <span>ผู้ใช้งานต้องมีอายุ 15 ปีขึ้นไป</span>
+      </div>
+    </div>
+  </footer>
+</div>
+<script src="js/data.js"></script>
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

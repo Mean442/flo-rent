@@ -1,0 +1,13 @@
+{
+  "name": "flo-rent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FLO-RENT — rental marketplace (static frontend + zero-dependency Node backend)",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
