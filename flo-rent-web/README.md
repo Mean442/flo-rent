@@ -56,19 +56,18 @@ PORT=8080 HOST=0.0.0.0 npm start
 
 ```
 flo-rent-web/
-├── index.html browse.html item.html post.html look-for.html
-├── login.html profile.html bookings.html admin.html
-├── css/style.css
-├── js/
-│   ├── data.js      # ค่าคงที่หมวดหมู่
-│   ├── api.js       # fetch wrapper + token
-│   ├── app.js       # ตรรกะหน้าเว็บทั้งหมด
-│   └── admin.js     # หน้าแอดมิน
+├── public/            # หน้าเว็บทั้งหมด (Vercel เสิร์ฟโฟลเดอร์นี้เป็นไฟล์ static)
+│   ├── index.html browse.html item.html post.html look-for.html
+│   ├── login.html profile.html bookings.html admin.html
+│   ├── css/style.css
+│   └── js/
 ├── server/
 │   ├── server.js    # HTTP server + REST API + static files
 │   ├── db.js        # ที่เก็บ JSON แบบ atomic write
 │   ├── auth.js      # scrypt hash + token
 │   └── seed.js      # ข้อมูลตั้งต้น
+├── api/index.js     # จุดเข้า serverless ของ Vercel
+├── vercel.json
 └── package.json     # npm start
 ```
 
@@ -130,3 +129,15 @@ npm start
 - ประกาศ/การจองแก้ได้เฉพาะเจ้าของ (หรือแอดมิน)
 
 ข้อจำกัดที่ควรรู้ก่อนใช้จริง: ข้อมูลเก็บเป็นไฟล์ JSON เครื่องเดียว (ไม่รองรับหลายอินสแตนซ์), ไม่มี HTTPS/อีเมลยืนยันตัวตน/ระบบชำระเงินจริง, และควรเปลี่ยนรหัสผ่านบัญชีทดลองก่อนใช้งานสาธารณะ
+
+## Deploy บน Vercel
+
+Vercel รันเซิร์ฟเวอร์ที่ `listen()` ค้างไว้ไม่ได้ และดิสก์เขียนถาวรไม่ได้ จึงแยกเป็น: ไฟล์ใน `public/` เสิร์ฟเป็น static, ส่วน `/api/*` รันเป็น serverless function (`api/index.js`) และเก็บข้อมูลใน Redis
+
+1. Vercel → Project → Settings → General → **Root Directory = `flo-rent-web`**
+2. Project → **Storage → Marketplace → Upstash for Redis** (ฟรี) → Connect to Project
+   ระบบจะเพิ่ม env `KV_REST_API_URL` และ `KV_REST_API_TOKEN` ให้เอง
+3. **Redeploy** — ครั้งแรกที่มีคนเรียก API ระบบจะสร้างข้อมูลตั้งต้น (บัญชีทดลอง + สินค้า 16 ชิ้น) ลง Redis ให้เอง
+4. ก่อนใช้จริง เปลี่ยนรหัสผ่านบัญชีทดลองทั้ง 3 บัญชี
+
+ถ้าไม่ตั้ง Redis ระบบยังรันได้ แต่ใช้ `/tmp` ของแต่ละอินสแตนซ์ ข้อมูลจะหายและไม่ตรงกันระหว่างอินสแตนซ์
