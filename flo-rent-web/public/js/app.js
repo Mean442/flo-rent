@@ -770,6 +770,100 @@
     }
 
     var flash = '';
+    var myItems = [];
+
+    function manageCard(item) {
+      var hidden = item.status === 'hidden';
+      return '' +
+        '<div class="manage-card">' +
+          itemCard(item) +
+          '<div class="manage-actions">' +
+            '<button class="btn-ghost" type="button" data-manage="edit" data-id="' + esc(item.id) + '">แก้ไข</button>' +
+            '<button class="btn-ghost" type="button" data-manage="toggle" data-id="' + esc(item.id) +
+              '" data-value="' + (hidden ? 'published' : 'hidden') + '">' + (hidden ? 'เผยแพร่อีกครั้ง' : 'ซ่อนประกาศ') + '</button>' +
+            '<button class="btn-ghost" type="button" data-manage="delete" data-id="' + esc(item.id) + '">ลบ</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function openEditDialog(item) {
+      var old = document.getElementById('edit-dialog');
+      if (old) old.remove();
+      var tags = Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || '');
+      var dlg = document.createElement('dialog');
+      dlg.id = 'edit-dialog';
+      dlg.className = 'edit-dialog';
+      dlg.innerHTML = '' +
+        '<form method="dialog" id="edit-form" class="booking-form" style="margin:0">' +
+          '<h2 class="display display-sm" style="font-size:24px">แก้ไขประกาศ</h2>' +
+          '<label class="field"><span>ชื่อสินค้า</span><input type="text" id="ed-title" required value="' + esc(item.title) + '"></label>' +
+          '<div class="form-grid">' +
+            '<label class="field"><span>ราคา / วัน</span><input type="number" id="ed-price" min="0" step="10" required value="' + esc(item.price) + '"></label>' +
+            '<label class="field"><span>เงินมัดจำ</span><input type="number" id="ed-deposit" min="0" step="100" required value="' + esc(item.deposit) + '"></label>' +
+          '</div>' +
+          '<label class="field"><span>พื้นที่ / จุดนัดรับ</span><input type="text" id="ed-location" value="' + esc(item.location) + '"></label>' +
+          '<label class="field"><span>คำค้น (คั่นด้วยจุลภาค)</span><input type="text" id="ed-tags" value="' + esc(tags) + '"></label>' +
+          '<label class="field"><span>รายละเอียด</span><textarea id="ed-desc">' + esc(item.desc) + '</textarea></label>' +
+          '<p class="form-msg" id="ed-msg" role="status"></p>' +
+          '<div class="form-actions" style="margin-top:4px">' +
+            '<button class="btn btn-maroon btn-sm" type="submit">บันทึก</button>' +
+            '<button class="btn btn-ghost" type="button" id="ed-cancel">ยกเลิก</button>' +
+          '</div>' +
+        '</form>';
+      document.body.appendChild(dlg);
+      dlg.querySelector('#ed-cancel').addEventListener('click', function () { dlg.close(); });
+      dlg.addEventListener('close', function () { dlg.remove(); });
+      dlg.querySelector('#edit-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+        var msg = $('ed-msg');
+        var button = event.target.querySelector('button[type="submit"]');
+        button.disabled = true;
+        try {
+          await API.patch('/items/' + encodeURIComponent(item.id), {
+            title: $('ed-title').value.trim(),
+            price: $('ed-price').value,
+            deposit: $('ed-deposit').value,
+            location: $('ed-location').value.trim(),
+            tags: $('ed-tags').value,
+            desc: $('ed-desc').value
+          });
+          dlg.close();
+          toast('บันทึกประกาศแล้ว', 'ok');
+          await render();
+        } catch (err) {
+          button.disabled = false;
+          if (err.status === 401) { requireLogin(); return; }
+          msg.textContent = err.message;
+          msg.className = 'form-msg is-error';
+        }
+      });
+      dlg.showModal();
+    }
+
+    async function manageItem(btn) {
+      var act = btn.getAttribute('data-manage');
+      var id = btn.getAttribute('data-id');
+      var item = myItems.filter(function (entry) { return entry.id === id; })[0];
+      if (!item) return;
+
+      if (act === 'edit') { openEditDialog(item); return; }
+      if (act === 'delete' && !window.confirm('ลบประกาศ “' + item.title + '” ถาวร?')) return;
+
+      btn.disabled = true;
+      try {
+        if (act === 'toggle') {
+          await API.patch('/items/' + encodeURIComponent(id), { status: btn.getAttribute('data-value') });
+          toast(btn.getAttribute('data-value') === 'hidden' ? 'ซ่อนประกาศแล้ว' : 'เผยแพร่ประกาศแล้ว', 'ok');
+        } else {
+          await API.del('/items/' + encodeURIComponent(id));
+          toast('ลบประกาศแล้ว', 'ok');
+        }
+        await render();
+      } catch (err) {
+        btn.disabled = false;
+        showError(err);
+      }
+    }
 
     async function render() {
       root.innerHTML = '<p class="muted" style="padding:40px 0">กำลังโหลดบัญชี...</p>';
@@ -779,6 +873,7 @@
         var results = await Promise.all([API.get('/me'), API.get('/items?mine=1')]);
         me = results[0];
         mine = results[1].items;
+        myItems = mine;
       } catch (err) {
         root.innerHTML = loginPrompt('โหลดบัญชีไม่สำเร็จ', err.message);
         return;
@@ -840,7 +935,7 @@
                 '<a class="link-arrow" href="post.html">ลงประกาศใหม่ →</a>' +
               '</div>' +
               (mine.length
-                ? '<div class="grid-3">' + mine.map(itemCard).join('') + '</div>'
+                ? '<div class="grid-3" id="my-items">' + mine.map(manageCard).join('') + '</div>'
                 : '<p class="muted">ยังไม่มีประกาศ — ของที่ไม่ได้ใช้อยู่บ้านสามารถสร้างรายได้ให้คุณได้</p>') +
             '</section>' +
           '</div>' +
@@ -859,6 +954,14 @@
             node.classList.toggle('is-active', node === btn);
           });
           $('pf-avatar').value = btn.getAttribute('data-avatar');
+        });
+      }
+
+      var mineGrid = $('my-items');
+      if (mineGrid) {
+        mineGrid.addEventListener('click', function (event) {
+          var btn = event.target.closest('[data-manage]');
+          if (btn) manageItem(btn);
         });
       }
 

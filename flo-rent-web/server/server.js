@@ -17,12 +17,10 @@ const seed = require('./seed');
 
 const PORT = Number(process.env.PORT || 4173);
 const HOST = process.env.HOST || '127.0.0.1';
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '..', 'public');
 const MAX_BODY = 64 * 1024;
 const SESSION_TTL = 14 * 24 * 60 * 60 * 1000;
 const DAY = 86400000;
-
-db.init(seed.build);
 
 const CATEGORIES = seed.CATEGORIES;
 const CATEGORY_KEYS = CATEGORIES.map(function (cat) { return cat.key; });
@@ -179,6 +177,17 @@ function createSession(user) {
 }
 
 function readBody(req) {
+  // บน Vercel ตัว runtime อ่านและ parse body ให้แล้ว (req.body) สตรีมจึงถูกใช้หมด — ถ้ารอ 'data'/'end' คำขอ POST จะค้างจน timeout
+  if (req.body !== undefined && req.body !== null) {
+    const given = req.body;
+    if (Buffer.isBuffer(given) || typeof given === 'string') {
+      const text = Buffer.isBuffer(given) ? given.toString('utf8') : given;
+      if (Buffer.byteLength(text) > MAX_BODY) { const big = new Error('ข้อมูลที่ส่งมามีขนาดใหญ่เกินไป'); big.status = 413; return Promise.reject(big); }
+      if (!text) return Promise.resolve({});
+      try { return Promise.resolve(JSON.parse(text)); } catch (err) { const bad = new Error('รูปแบบ JSON ไม่ถูกต้อง'); bad.status = 400; return Promise.reject(bad); }
+    }
+    return Promise.resolve(given);
+  }
   return new Promise(function (resolve, reject) {
     let size = 0;
     const chunks = [];
@@ -210,7 +219,8 @@ function readBody(req) {
 const rateBuckets = new Map();
 
 function allowAttempt(req, bucket) {
-  const key = bucket + ':' + (req.socket.remoteAddress || 'local');
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  const key = bucket + ':' + (forwarded || req.socket.remoteAddress || 'local');
   const now = Date.now();
   const record = rateBuckets.get(key);
   if (!record || record.resetAt < now) {
@@ -772,32 +782,41 @@ async function handle(req, res) {
   return serveStatic(req, res, url.pathname);
 }
 
-const server = http.createServer(function (req, res) {
-  handle(req, res).catch(function (err) {
+function respond(req, res) {
+  return handle(req, res).catch(function (err) {
     const status = err && err.status ? err.status : 500;
     if (status >= 500) console.error('[api]', err);
     if (res.headersSent) return res.end();
     sendJson(res, status, { error: status >= 500 ? 'เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์' : err.message });
   });
-});
-
-server.listen(PORT, HOST, function () {
-  console.log('FLO-RENT พร้อมใช้งานที่ http://' + HOST + ':' + PORT);
-  console.log('ไฟล์ข้อมูล: ' + db.DB_FILE);
-  console.log('บัญชีแอดมิน: admin@flo-rent.co / admin1234');
-});
-
-function shutdown(signal) {
-  console.log('\n받า signal ' + signal + ' กำลังบันทึกข้อมูลและปิดเซิร์ฟเวอร์...');
-  db.flushSync();
-  server.close(function () { process.exit(0); });
-  setTimeout(function () { process.exit(0); }, 3000).unref();
 }
 
-process.on('SIGINT', function () { shutdown('SIGINT'); });
-process.on('SIGTERM', function () { shutdown('SIGTERM'); });
-process.on('uncaughtException', function (err) {
-  console.error('[fatal]', err);
-  db.flushSync();
-  process.exit(1);
-});
+module.exports = { respond, seed };
+
+/* รันตรง ๆ (npm start) = เซิร์ฟเวอร์ปกติ / บน Vercel ไฟล์ api/index.js จะ require ไฟล์นี้ไปใช้แทน */
+if (require.main === module) {
+  db.init(seed.build);
+
+  const server = http.createServer(respond);
+
+  server.listen(PORT, HOST, function () {
+    console.log('FLO-RENT พร้อมใช้งานที่ http://' + HOST + ':' + PORT);
+    console.log('ไฟล์ข้อมูล: ' + db.DB_FILE);
+    console.log('บัญชีแอดมิน: admin@flo-rent.co / admin1234');
+  });
+
+  const shutdown = function (signal) {
+    console.log('\nได้รับสัญญาณ ' + signal + ' กำลังบันทึกข้อมูลและปิดเซิร์ฟเวอร์...');
+    db.flushSync();
+    server.close(function () { process.exit(0); });
+    setTimeout(function () { process.exit(0); }, 3000).unref();
+  };
+
+  process.on('SIGINT', function () { shutdown('SIGINT'); });
+  process.on('SIGTERM', function () { shutdown('SIGTERM'); });
+  process.on('uncaughtException', function (err) {
+    console.error('[fatal]', err);
+    db.flushSync();
+    process.exit(1);
+  });
+}
