@@ -15,7 +15,10 @@ var FLO_API = (function () {
     } catch (err) { /* โหมดส่วนตัวอาจเขียนไม่ได้ */ }
   }
 
-  async function request(method, path, body) {
+  function wait(ms) { return new Promise(function (resolve) { window.setTimeout(resolve, ms); }); }
+
+  /* GET ที่ได้ 401 ทั้งที่มี token: ลองซ้ำอีกครั้งก่อนยอมแพ้ (กันกรณีเซิร์ฟเวอร์ตอบพลาดชั่วคราว แล้วถูกมองว่าหลุดจากระบบ) */
+  async function request(method, path, body, retried) {
     var headers = { Accept: 'application/json' };
     var active = token();
     if (active) headers.Authorization = 'Bearer ' + active;
@@ -37,6 +40,11 @@ var FLO_API = (function () {
 
     var payload = null;
     try { payload = await response.json(); } catch (err) { payload = null; }
+
+    if (response.status === 401 && active && method === 'GET' && !retried) {
+      await wait(500);
+      return request(method, path, body, true);
+    }
 
     if (!response.ok) {
       var failure = new Error((payload && payload.error) || 'เกิดข้อผิดพลาด (' + response.status + ')');
