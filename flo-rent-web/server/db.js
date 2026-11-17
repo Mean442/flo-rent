@@ -93,24 +93,67 @@ async function remote(command) {
 }
 
 /*
+ * กันการเขียนทับกัน (lost update): เก็บข้อมูลทั้งก้อนไว้ที่ key เดียว + เลขเวอร์ชันอีก key หนึ่ง
+ * - โหลด: อ่านข้อมูล+เวอร์ชันพร้อมกันผ่าน EVAL (รันบนเซิร์ฟเวอร์หลักของ Redis ไม่อ่านจาก replica เก่า)
+ * - บันทึก: compare-and-set — เขียนได้เฉพาะเมื่อเวอร์ชันยังเท่าตอนที่โหลด ถ้ามีคนเขียนแทรกจะได้ false
+ *   แล้ว api/index.js จะโหลดใหม่และทำคำขอนั้นซ้ำ
+ */
+const VERSION_KEY = REMOTE_KEY + ':v';
+const LOAD_SCRIPT = "local d=redis.call('GET',KEYS[1]) local v=redis.call('GET',KEYS[2]) if not d then d='' end if not v then v='0' end return {d,v}";
+const COMMIT_SCRIPT = "local v=redis.call('GET',KEYS[2]) if not v then v='0' end if v==ARGV[1] then redis.call('SET',KEYS[1],ARGV[2]) redis.call('SET',KEYS[2],ARGV[3]) return 1 end return 0";
+
+let version = '0';
+let dirty = false;
+
+function nextVersion() {
+  return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+}
+
+async function casWrite(expected, body) {
+  const fresh = nextVersion();
+  const ok = await remote(['EVAL', COMMIT_SCRIPT, 2, REMOTE_KEY, VERSION_KEY, expected, body, fresh]);
+  return ok === 1 ? fresh : null;
+}
+
+/*
  * โหลดข้อมูลล่าสุดเข้าหน่วยความจำ — บน Vercel เรียกทุกคำขอ (แต่ละอินสแตนซ์ไม่แชร์หน่วยความจำกัน)
  * โหมดไฟล์: โหลดครั้งเดียวแล้วใช้ต่อ
  */
 async function load(seedFactory) {
   seedFn = seedFactory || seedFn;
+  dirty = false;
   if (!IS_REMOTE) {
     if (!state) init(seedFn);
     return state;
   }
 
-  let raw = await remote(['GET', REMOTE_KEY]);
-  if (!raw) {
-    // ครั้งแรก: สร้างข้อมูลตั้งต้น (NX กันหลายอินสแตนซ์ seed ชนกัน) แล้วอ่านค่าที่ชนะกลับมา
-    await remote(['SET', REMOTE_KEY, JSON.stringify(normalize(seedFn())), 'NX']);
-    raw = await remote(['GET', REMOTE_KEY]);
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const pair = await remote(['EVAL', LOAD_SCRIPT, 2, REMOTE_KEY, VERSION_KEY]);
+    if (pair && pair[0]) {
+      state = normalize(JSON.parse(pair[0]));
+      version = String(pair[1] || '0');
+      return state;
+    }
+    // ครั้งแรก: สร้างข้อมูลตั้งต้น (ถ้าอินสแตนซ์อื่น seed ชนะก่อน CAS จะล้มเหลวแล้ววนอ่านค่าของเขา)
+    const seeded = normalize(seedFn());
+    const fresh = await casWrite('0', JSON.stringify(seeded));
+    if (fresh) {
+      state = seeded;
+      version = fresh;
+      return state;
+    }
   }
-  state = normalize(JSON.parse(raw));
-  return state;
+  throw new Error('โหลด/สร้างข้อมูลตั้งต้นไม่สำเร็จ');
+}
+
+/* บันทึกการเปลี่ยนแปลงของคำขอนี้ — คืน true ถ้าสำเร็จ (หรือไม่มีอะไรต้องเขียน), false ถ้ามีคนเขียนแทรกก่อน */
+async function commit() {
+  if (!IS_REMOTE || !dirty) return true;
+  const fresh = await casWrite(version, JSON.stringify(state));
+  dirty = false;
+  if (!fresh) return false;
+  version = fresh;
+  return true;
 }
 
 /* ---------- ใช้ร่วมกัน ---------- */
@@ -122,12 +165,7 @@ function data() {
 
 function persist() {
   if (IS_REMOTE) {
-    const body = JSON.stringify(state); // จับภาพข้อมูล ณ ตอนที่สั่งบันทึก
-    chain = chain.then(function () {
-      return remote(['SET', REMOTE_KEY, body]);
-    }).catch(function (err) {
-      console.error('[db] บันทึกลง Redis ไม่สำเร็จ:', err.message);
-    });
+    dirty = true; // โหมด Redis: ทำเครื่องหมายไว้ แล้ว commit() เขียนครั้งเดียวตอนจบคำขอ
     return chain;
   }
 
@@ -153,4 +191,4 @@ function flushSync() {
   try { writeNow(); } catch (err) { console.error('[db] flush ไม่สำเร็จ:', err.message); }
 }
 
-module.exports = { init, load, data, persist, settle, flushSync, DB_FILE, DATA_DIR, IS_REMOTE };
+module.exports = { init, load, commit, data, persist, settle, flushSync, DB_FILE, DATA_DIR, IS_REMOTE };
